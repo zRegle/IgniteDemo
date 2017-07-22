@@ -1,22 +1,25 @@
 package node;
 
 import model.School;
+import model.Student;
+import model.Teacher;
 import modelStore.SchoolStore;
+import modelStore.StudentStore;
+import modelStore.TeacherStore;
 import org.apache.ignite.Ignite;
 import org.apache.ignite.IgniteCache;
 import org.apache.ignite.Ignition;
-import org.apache.ignite.cache.query.ScanQuery;
+import org.apache.ignite.cache.affinity.AffinityKey;
 import org.apache.ignite.configuration.CacheConfiguration;
 import org.apache.ignite.configuration.IgniteConfiguration;
 import org.apache.ignite.spi.discovery.tcp.TcpDiscoverySpi;
 import org.apache.ignite.spi.discovery.tcp.ipfinder.multicast.TcpDiscoveryMulticastIpFinder;
 
-import javax.cache.Cache;
 import javax.cache.configuration.FactoryBuilder;
-import java.util.List;
 
 public class node_liang {
     private static long FLUSH_FREQUENCY=20000;
+    private static long THREAD_SLEEP_TIME=10000;
 
     public static void main(String[] args) {
         TcpDiscoverySpi spi = new TcpDiscoverySpi();
@@ -28,24 +31,50 @@ public class node_liang {
 
         Ignite ignite=Ignition.start(cfg);
 
+        //school
         CacheConfiguration<Integer, School> schoolCFG=new CacheConfiguration<>("schoolCache");
         schoolCFG.setCacheStoreFactory(FactoryBuilder.factoryOf(SchoolStore.class));
         schoolCFG.setReadThrough(true);
         schoolCFG.setWriteThrough(true);
         schoolCFG.setWriteBehindEnabled(true);
         schoolCFG.setWriteBehindFlushFrequency(FLUSH_FREQUENCY);
-
         IgniteCache<Integer,School> schoolCache=ignite.getOrCreateCache(schoolCFG);
         schoolCache.loadCache(null);
 
-        List<School> schoolList=schoolCache.query(new ScanQuery<Integer,School>(
-                (schoolID,school)->schoolID>99900),
-                Cache.Entry::getValue
-        ).getAll();
+        //student
+        CacheConfiguration<AffinityKey<Integer>, Student> studentCFG=new CacheConfiguration<>("studentCache");
+        studentCFG.setCacheStoreFactory(FactoryBuilder.factoryOf(StudentStore.class));
+        studentCFG.setReadThrough(true);
+        studentCFG.setWriteThrough(true);
+        studentCFG.setWriteBehindEnabled(true);
+        studentCFG.setWriteBehindFlushFrequency(FLUSH_FREQUENCY);
+        IgniteCache<AffinityKey<Integer>,Student> studentCache=ignite.getOrCreateCache(studentCFG);
+        studentCache.loadCache(null);
 
-        for(School school:schoolList)
-            System.out.println(school.toString());
+        //teacher
+        CacheConfiguration<AffinityKey<Integer>, Teacher> teacherCFG=new CacheConfiguration<>("teacherCache");
+        teacherCFG.setCacheStoreFactory(FactoryBuilder.factoryOf(TeacherStore.class));
+        teacherCFG.setReadThrough(true);
+        teacherCFG.setWriteThrough(true);
+        teacherCFG.setWriteBehindEnabled(true);
+        teacherCFG.setWriteBehindFlushFrequency(FLUSH_FREQUENCY);
+        IgniteCache<AffinityKey<Integer>,Teacher> teacherCache=ignite.getOrCreateCache(teacherCFG);
+        teacherCache.loadCache(null);
 
-        System.out.println(schoolCache.size());
+        Thread count=new Thread(
+                ()->{
+                    while(true){
+                        try{
+                            Thread.sleep(THREAD_SLEEP_TIME);
+                            System.out.println("SCHOOL:  "+schoolCache.localSize());
+                            System.out.println("STUDENT:  "+studentCache.localSize());
+                            System.out.println("TEACHER:  "+teacherCache.localSize());
+                        }catch (InterruptedException e){
+                            e.printStackTrace();
+                        }
+                    }
+                }
+        );
+        count.start();
     }
 }
