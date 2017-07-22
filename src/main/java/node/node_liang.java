@@ -39,7 +39,8 @@ public class node_liang {
         schoolCFG.setWriteBehindEnabled(true);
         schoolCFG.setWriteBehindFlushFrequency(FLUSH_FREQUENCY);
         IgniteCache<Integer,School> schoolCache=ignite.getOrCreateCache(schoolCFG);
-        schoolCache.loadCache(null);
+        Thread school=new Thread(()->schoolCache.loadCache(null));
+        school.start();
 
         //student
         CacheConfiguration<AffinityKey<Integer>, Student> studentCFG=new CacheConfiguration<>("studentCache");
@@ -49,7 +50,8 @@ public class node_liang {
         studentCFG.setWriteBehindEnabled(true);
         studentCFG.setWriteBehindFlushFrequency(FLUSH_FREQUENCY);
         IgniteCache<AffinityKey<Integer>,Student> studentCache=ignite.getOrCreateCache(studentCFG);
-        studentCache.loadCache(null);
+        Thread student=new Thread(()->studentCache.loadCache(null));
+        student.start();
 
         //teacher
         CacheConfiguration<AffinityKey<Integer>, Teacher> teacherCFG=new CacheConfiguration<>("teacherCache");
@@ -59,7 +61,8 @@ public class node_liang {
         teacherCFG.setWriteBehindEnabled(true);
         teacherCFG.setWriteBehindFlushFrequency(FLUSH_FREQUENCY);
         IgniteCache<AffinityKey<Integer>,Teacher> teacherCache=ignite.getOrCreateCache(teacherCFG);
-        teacherCache.loadCache(null);
+        Thread teacher=new Thread(()->teacherCache.loadCache(null));
+        teacher.start();
 
         Thread count=new Thread(
                 ()->{
@@ -78,3 +81,4 @@ public class node_liang {
         count.start();
     }
 }
+
