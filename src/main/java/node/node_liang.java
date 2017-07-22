@@ -29,7 +29,7 @@ public class node_liang {
         Ignite ignite=Ignition.start(cfg);
 
         CacheConfiguration<Integer, School> schoolCFG=new CacheConfiguration<>("schoolCache");
-        schoolCFG.setCacheLoaderFactory(FactoryBuilder.factoryOf(SchoolStore.class));
+        schoolCFG.setCacheStoreFactory(FactoryBuilder.factoryOf(SchoolStore.class));
         schoolCFG.setReadThrough(true);
         schoolCFG.setWriteThrough(true);
         schoolCFG.setWriteBehindEnabled(true);
